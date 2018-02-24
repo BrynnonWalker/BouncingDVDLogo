@@ -11,9 +11,7 @@ class SceneOne < SKScene
   def didMoveToView _
     # Set the aspect ratio.
     self.scaleMode = SKSceneScaleModeAspectFit
-
-    $scene = self
-
+    
     # Set the background color to black.
     self.backgroundColor = UIColor.blackColor
     
@@ -36,7 +34,10 @@ class SceneOne < SKScene
                          device_screen_height.fdiv(2),
                          'DVD_Logo.png'
 
-    @spriteMoveState = 0
+    @logo.xScale = 0.5
+    @logo.yScale = 0.5
+    @logo.colorBlendFactor = 1.0
+    @velocity = CGPointMake 1.5, 1.5
   end
 
   def wrap wrap_length, text
@@ -78,20 +79,54 @@ class SceneOne < SKScene
     sprite
   end
 
-  def update_sprite_color
+  def at_edge?
+
+    logo_min = CGPointMake @logo.position.x - @logo.size.width * @logo.xScale,
+                           @logo.position.y - @logo.size.height * @logo.yScale
+    logo_max = CGPointMake @logo.position.x + @logo.size.width * @logo.xScale,
+                           @logo.position.y + @logo.size.height * @logo.yScale
+
+    return (logo_min.x <= 0) || (logo_max.x >= device_screen_width),
+        (logo_min.y <= 0) || (logo_max.y >= device_screen_height)
+
   end
 
-  def update_sprite_position
+  def change_color
+    # ensure a ratio of 2 bright and 1 dark for a saturated, bright-ish color
+    color_distribution = [rand(0.85..1.0), rand(0.0..0.15), rand(0.5..1.0)]
 
-    # choose new corner state
-    # move to corner state(s) #4
-    #
+    # shuffle and distribute randomly amongst RGB
+    color_distribution.shuffle!
+
+    @logo.color = UIColor.alloc.initWithRed(color_distribution[0],
+                                            green: color_distribution[1],
+                                            blue: color_distribution[2],
+                                            alpha: 1.0)
+  end
+
+  def update_sprite
+
+    # check for edge collision
+    # flip velocity and change color on bounce
+    edge_check = at_edge?
+
+    if edge_check[0]
+      @velocity.x *= -1
+      change_color
+    end
+
+    if edge_check[1]
+      @velocity.y *= -1
+      change_color
+    end
+
+    # move sprite
+    @logo.position = CGPointMake @logo.position.x + @velocity.x, @logo.position.y + @velocity.y
+
   end
 
   def update _
-    #update_color
-    update_sprite_position
-    #@camera.update
+    update_sprite
   end
 
 end
